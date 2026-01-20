@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}View{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<div>
+        <input type="textbox" id="sender" /><input type="textbox" id="message" /><input type="submit" id="send_media_form" />
+        <ul>
+      {% for row in data %}
+            <li>
+              <span>{{ row['sender'] }}</span>
+              <span>{{ row['message'] }}</span>
+            </li>
+      {% endfor %}
+        </ul>
+</div>
+{% endblock %}
+
+{% block end %}
+<script>
+document.getElementById('send_media_form').onclick = function() { sendMediaForm(); };
+
+function sendMediaForm()
+{
+        data = {
+          "sender": document.getElementById('sender').value,
+          "message": document.getElementById('message').value
+        }
+
+        fetch("./send", {
+                method: 'post',
+                headers: {
+                    "Content-Type": "application/json",
+                    'Accept':'application/json'
+                },
+                body: JSON.stringify(data),
+        }).then(() => {
+                document.getElementById('sender').value = "";
+                document.getElementById('message').value = "";
+        });
+}
+
+</script>
+{% endblock %}

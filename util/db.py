@@ -37,7 +37,7 @@ class DBDemo:
 
 
         def execute(self, query, parameters):
-                response = self.cur.execute(query,*parameters).fetchall()
+                response = self.cur.execute(query,parameters).fetchall()
 
                 self.db.commit()
                 return response

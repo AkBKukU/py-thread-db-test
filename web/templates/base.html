@@ -1,9 +1,15 @@
 <!doctype html>
-<title>{% block title %}{% endblock %} - Demo</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<head>
+  <title>{% block title %}{% endblock %} - Demo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  {% block head %}{% endblock %}
+
+</head>
 <section class="content">
   <header>
     {% block header %}{% endblock %}
   </header>
   {% block content %}{% endblock %}
 </section>
+{% block end %}{% endblock %}

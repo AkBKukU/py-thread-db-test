@@ -1,11 +1,11 @@
 import os
 
-from flask import Flask
+from quart import Quart
 
 
 def create_app(test_config=None):
-    """Create and configure an instance of the Flask application."""
-    app = Flask(__name__, instance_relative_config=True)
+    """Create and configure an instance of the Quart application."""
+    app = Quart(__name__, instance_relative_config=True)
 
 
     @app.route("/hello")
@@ -14,8 +14,10 @@ def create_app(test_config=None):
 
 
     from . import view
+    from . import chat
 
     app.register_blueprint(view.bp)
+    app.register_blueprint(chat.bp)
 
     #app.add_url_rule("/", endpoint="index")
 
