@@ -7,7 +7,7 @@
 {% block content %}
 <div>
         <input type="textbox" id="sender" /><input type="textbox" id="message" /><input type="submit" id="send_media_form" />
-        <ul>
+        <ul id="message-list">
       {% for row in data %}
             <li>
               <span>{{ row['sender'] }}</span>
@@ -20,8 +20,57 @@
 
 {% block end %}
 <script>
-document.getElementById('send_media_form').onclick = function() { sendMediaForm(); };
 
+
+const socket = new WebSocket("ws://localhost:5000/chat/ws");
+
+socket.addEventListener("open", (event) => {
+  socket.send(JSON.stringify({"event":"open"}));
+});
+
+
+socket.addEventListener("close", (event) => {
+    alert("nap time");
+});
+
+
+// Listen for messages
+socket.addEventListener("message", (event) => {
+    try {
+        data = JSON.parse(event.data);
+        if( data.event && data.event == "update all")
+        {
+
+            li = document.createElement("li")
+
+            elm_name = document.createElement("span")
+            elm_name.innerText=data.data.sender
+            li.appendChild(elm_name)
+            elm_message = document.createElement("span")
+            elm_message.innerText=data.data.message
+            li.appendChild(elm_message)
+
+            document.getElementById("message-list").appendChild(li)
+        }
+    } catch (error) {
+        alert("Message from server "+ event.data);
+    }
+
+});
+
+document.getElementById('send_media_form').onclick = function() { sendWebSocket(); };
+function sendWebSocket()
+{
+    socket.send(JSON.stringify({"event":"update all", "data": {
+        "sender": document.getElementById('sender').value,
+        "message": document.getElementById('message').value
+      }}));
+
+    document.getElementById('sender').value = "";
+    document.getElementById('message').value = "";
+}
+
+//document.getElementById('send_media_form').onclick = function() { sendMediaForm(); };
 function sendMediaForm()
 {
         data = {
