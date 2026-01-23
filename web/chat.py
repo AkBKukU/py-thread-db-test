@@ -15,15 +15,42 @@ from quart import url_for
 
 from util.db import DBDemo
 
+# For copying function metadata through decorators
+from functools import wraps
+
 bp = Blueprint("chat", __name__, url_prefix="/chat")
 
-global connections
-connections=[]
+
+websocket_clients = set()
+
+
+def websocket_register(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+
+        global websocket_clients
+        websocket_clients.add(websocket._get_current_object())
+        print("Client added")
+
+        try:
+            return await func(*args, **kwargs)
+        finally:
+            websocket_clients.remove(websocket._get_current_object())
+            print("Client removed")
+
+    return wrapper
+
+
+async def websocket_broadcast(message):
+    for client in websocket_clients:
+        await client.send(message)
+
+
 
 @bp.websocket("/ws")
+@websocket_register
 async def ws():
     try:
-        connections.append(websocket)
         while True:
 
             data = json.loads( await websocket.receive() )
@@ -32,8 +59,7 @@ async def ws():
             if data["event"] == "open":
                 await websocket.send("Hello new connection!")
             elif data["event"] == "update all":
-                for connection in connections:
-                    await connection.send(json.dumps(data))
+                await websocket_broadcast(json.dumps(data))
             else:
                 await db_message(data["data"])
                 await websocket.send(json.dumps(data))
@@ -41,6 +67,7 @@ async def ws():
         # Handle disconnection here
         print("Oh noes!")
         raise
+
 
 @bp.route("/", methods=("GET", "POST"))
 async def page():
