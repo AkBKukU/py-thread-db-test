@@ -80,6 +80,10 @@ async def db():
         db.execute("INSERT INTO chat(sender,message) VALUES (?,?)",[data["sender"],data["message"]])
 
         resp = db.execute("SELECT timestamp, sender, message FROM chat",[])
+        await wsc.websocket_broadcast({
+            "sender":data["sender"],
+            "message":data["message"]
+        })
 
         return await render_template("chat/page.html", data=resp)
 

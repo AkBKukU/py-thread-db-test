@@ -62,7 +62,7 @@ socket.addEventListener("message", (event) => {
 
 });
 
-document.getElementById('send_media_form').onclick = function() { sendWebSocket(); };
+//document.getElementById('send_media_form').onclick = function() { sendWebSocket(); };
 function sendWebSocket()
 {
     socket.send(JSON.stringify({"event":"broadcast", "data": {
@@ -73,7 +73,7 @@ function sendWebSocket()
     document.getElementById('message').value = "";
 }
 
-//document.getElementById('send_media_form').onclick = function() { sendMediaForm(); };
+document.getElementById('send_media_form').onclick = function() { sendMediaForm(); };
 function sendMediaForm()
 {
         data = {

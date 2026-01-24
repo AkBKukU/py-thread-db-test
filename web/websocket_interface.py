@@ -102,7 +102,7 @@ class WebSocketClients(object):
         self.websocket_alive = True
 
 
-    def exit_handler(sig, frame):
+    def exit_handler(self, sig, frame):
         """
         Handle CTRL-C to gracefully end program and API connections
 
