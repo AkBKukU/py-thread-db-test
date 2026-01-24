@@ -38,7 +38,11 @@ socket.addEventListener("close", (event) => {
 socket.addEventListener("message", (event) => {
     try {
         data = JSON.parse(event.data);
-        if( data.event && data.event == "update all")
+        if( data.event && data.event == "new_uuid")
+        {
+          alert("I'm now known as "+ data.uuid);
+        }
+        if( data.event && data.event == "broadcast")
         {
 
             li = document.createElement("li")
@@ -61,7 +65,7 @@ socket.addEventListener("message", (event) => {
 document.getElementById('send_media_form').onclick = function() { sendWebSocket(); };
 function sendWebSocket()
 {
-    socket.send(JSON.stringify({"event":"update all", "data": {
+    socket.send(JSON.stringify({"event":"broadcast", "data": {
         "sender": document.getElementById('sender').value,
         "message": document.getElementById('message').value
       }}));

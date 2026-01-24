@@ -2,6 +2,8 @@ import json
 from pprint import pprint
 
 import asyncio
+import signal
+import uuid
 
 from quart import Blueprint
 from quart import flash
@@ -20,53 +22,36 @@ from functools import wraps
 
 bp = Blueprint("chat", __name__, url_prefix="/chat")
 
+#####   ------------- User defnined line --------------
 
-websocket_clients = set()
+from .websocket_interface import WebSocketClients, WebSocketHandler
 
+wsc = WebSocketClients()
 
-def websocket_register(func):
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
+class CustomWebsocket(WebSocketHandler):
 
-        global websocket_clients
-        websocket_clients.add(websocket._get_current_object())
-        print("Client added")
-
-        try:
-            return await func(*args, **kwargs)
-        finally:
-            websocket_clients.remove(websocket._get_current_object())
-            print("Client removed")
-
-    return wrapper
-
-
-async def websocket_broadcast(message):
-    for client in websocket_clients:
-        await client.send(message)
-
-
+    async def receive(self,data):
+        if data is not None:
+                print("Got a data")
+                pprint(data)
+        if data["event"] == "open":
+            #await self.ws.send("Hello new connection!")
+            print("new")
+        elif data["event"] == "broadcast":
+            await wsc.websocket_broadcast({
+            "sender":data["data"]["sender"],
+            "message":data["data"]["message"]
+        })
+        else:
+            await db_message(data["data"])
+            await self.ws.send(json.dumps(data))
 
 @bp.websocket("/ws")
-@websocket_register
-async def ws():
-    try:
-        while True:
+@wsc.websocket_register(CustomWebsocket)
+async def ws(wsh):
+    await wsc.websocket_connect(wsh)
+    return
 
-            data = json.loads( await websocket.receive() )
-            if data is not None:
-                    print("Got a data")
-            if data["event"] == "open":
-                await websocket.send("Hello new connection!")
-            elif data["event"] == "update all":
-                await websocket_broadcast(json.dumps(data))
-            else:
-                await db_message(data["data"])
-                await websocket.send(json.dumps(data))
-    except asyncio.CancelledError:
-        # Handle disconnection here
-        print("Oh noes!")
-        raise
 
 
 @bp.route("/", methods=("GET", "POST"))
