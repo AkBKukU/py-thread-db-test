@@ -15,8 +15,6 @@ from quart import websocket
 from quart import session
 from quart import url_for
 
-from util.db import DBDemo
-
 # For copying function metadata through decorators
 from functools import wraps
 
