@@ -21,6 +21,46 @@
 {% block end %}
 <script>
 
+class JSONHandler
+{
+
+constructor(address="/api")
+{
+	this.address = address;
+}
+
+post(data=null)
+{
+    return fetch(this.address, {
+          method: 'post',
+          headers: {
+              "Content-Type": "application/json",
+              'Accept':'application/json'
+          },
+          body: JSON.stringify(data),
+    });
+}
+
+
+}
+
+
+class WebSocketHandler
+{
+
+constructor(address="ws://localhost:5000/ws")
+{
+	this.address = address;
+}
+
+
+objectToForm(data,title=null)
+{
+	var options = document.createElement("div");
+}
+
+}
+
 
 const socket = new WebSocket("ws://localhost:5000/chat/ws");
 
@@ -76,22 +116,24 @@ function sendWebSocket()
 document.getElementById('send_media_form').onclick = function() { sendMediaForm(); };
 function sendMediaForm()
 {
+        sender = new JSONHandler("./send")
+
         data = {
           "sender": document.getElementById('sender').value,
           "message": document.getElementById('message').value
         }
 
-        fetch("./send", {
-                method: 'post',
-                headers: {
-                    "Content-Type": "application/json",
-                    'Accept':'application/json'
-                },
-                body: JSON.stringify(data),
-        }).then(() => {
-                document.getElementById('message').value = "";
+        sender.post(data).then(function(response){
+
+          if (!response.ok) {
+              throw new Error(`Response bad`);
+          }else{
+              document.getElementById('message').value = "";
+          }
         });
+
 }
+
 
 </script>
 {% endblock %}

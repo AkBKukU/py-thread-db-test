@@ -110,7 +110,7 @@ class WebSocketClients(object):
         :param frame: Where you put pictures, idk
         :return: returns nothing
         """
-        print('You pressed Ctrl+C!')
+        print('You pressed Ctrl+C!:Websocket')
         self.websocket_alive = False
 
     async def websocket_connect(self,wsh):

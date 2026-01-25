@@ -60,13 +60,14 @@ async def page():
         Renders a simple page from a template
         """
         db = DBDemo()
-        data = db.execute("SELECT timestamp, sender, message FROM chat",[])
+        data = db.read("SELECT timestamp, sender, message FROM chat",[])
 
+        db.disconnect()
         return await render_template("chat/page.html", data=data)
 
 async def db_message(data):
         db = DBDemo()
-        db.execute("INSERT INTO chat(sender,message) VALUES (?,?)",[data["sender"],data["message"]])
+        db.modify("INSERT INTO chat(sender,message) VALUES (?,?)",[data["sender"],data["message"]])
 
 @bp.route("/send", methods=("GET", "POST"))
 async def db():
@@ -77,13 +78,15 @@ async def db():
         data = await ( request.get_json() )
 
         db = DBDemo()
-        db.execute("INSERT INTO chat(sender,message) VALUES (?,?)",[data["sender"],data["message"]])
+        db.modify("INSERT INTO chat(sender,message) VALUES (?,?)",[data["sender"],data["message"]])
 
-        resp = db.execute("SELECT timestamp, sender, message FROM chat",[])
+        resp = db.read("SELECT timestamp, sender, message FROM chat",[])
         await wsc.websocket_broadcast({
             "sender":data["sender"],
             "message":data["message"]
         })
+
+        db.disconnect()
 
         return await render_template("chat/page.html", data=resp)
 

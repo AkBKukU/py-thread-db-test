@@ -1,4 +1,5 @@
 import sqlite3
+import signal
 
 class DBDemo:
         def __init__(self, db_file="db.db", auto_connect=True,schema = "schema.sql"):
@@ -8,12 +9,11 @@ class DBDemo:
 
                         # Initialize DB if empty
                         res = self.cur.execute("SELECT name FROM sqlite_master")
-                        if res.fetchone() is None:
+                        if res.fetchall() is None:
                                 print("Initializing database...")
                                 self.db_init(schema)
                         else:
                                 print(f"Reloading [{db_file}]...")
-
 
         def connect(self,db_file="db.db"):
 
@@ -24,6 +24,7 @@ class DBDemo:
 
         def disconnect(self,db_file="db.db"):
 
+                self.db.commit()
                 self.db.close()
 
 
@@ -35,9 +36,12 @@ class DBDemo:
 
                 self.db.commit()
 
+        def read(self, query, parameters):
+                print(f"Reading: [{query}]...")
+                return self.cur.execute(query,parameters).fetchall()
 
-        def execute(self, query, parameters):
-                response = self.cur.execute(query,parameters).fetchall()
-
+        def modify(self, query, parameters):
+                print(f"Modify: [{query}]...")
+                self.cur.execute(query,parameters)
                 self.db.commit()
-                return response
+

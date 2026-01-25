@@ -30,9 +30,10 @@ async def db():
         Renders a simple page from a template
         """
         db = DBDemo()
-        db.execute("INSERT INTO timestamps(wordplace) VALUES (?)",["This is some text"])
+        db.modify("INSERT INTO timestamps(wordplace) VALUES (?)",["This is some text"])
 
-        data = db.execute("SELECT wordplace, timeinstance FROM timestamps",[])
+        data = db.read("SELECT wordplace, timeinstance FROM timestamps",[])
 
+        db.disconnect()
         pprint(data)
         return await render_template("view/db.html", data=data)
