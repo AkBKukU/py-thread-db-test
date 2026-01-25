@@ -51,64 +51,92 @@ class WebSocketHandler
 constructor(address="ws://localhost:5000/ws")
 {
 	this.address = address;
+    this.uuid=null;
+	this.ws = new WebSocket("ws://localhost:5000/chat/ws");
+
+    this.ws.addEventListener("close", (event) => {
+      this.websocket_close(event);
+    });
+
+    this.ws.addEventListener("open", (event) => {
+        this.sendEvent("open");
+    });
+
+    this.ws.addEventListener("message",  (event) => {
+      this.listener_message(event);
+    });
+
 }
 
-
-objectToForm(data,title=null)
+listener_message(event)
 {
-	var options = document.createElement("div");
-}
-
-}
-
-
-const socket = new WebSocket("ws://localhost:5000/chat/ws");
-
-socket.addEventListener("open", (event) => {
-  socket.send(JSON.stringify({"event":"open"}));
-});
-
-
-socket.addEventListener("close", (event) => {
-    alert("nap time");
-});
-
-
-// Listen for messages
-socket.addEventListener("message", (event) => {
     try {
-        data = JSON.parse(event.data);
+        var data = JSON.parse(event.data);
         if( data.event && data.event == "new_uuid")
         {
-          alert("I'm now known as "+ data.uuid);
+            this.uuid=data.uuid;
+            console.log("uuid: "+ data.uuid);
+        }else if(data.event){
+            this.websocket_message(data);
         }
+    } catch (error) {
+        alert("Message from server "+ event.data);
+    }
+}
+
+websocket_message(data)
+{
+
+}
+
+sendEvent(event_name,data=null)
+{
+    this.ws.send(JSON.stringify({"event":event_name,"data":data}));
+}
+websocket_close(event){
+    console.log("WebSocket Closed");
+}
+
+}
+
+
+class WebSocketCustom extends WebSocketHandler
+{
+websocket_message(data)
+{
+    try {
         if( data.event && data.event == "broadcast")
         {
 
-            li = document.createElement("li")
+            var li = document.createElement("li")
 
-            elm_name = document.createElement("span")
+            var elm_name = document.createElement("span")
             elm_name.innerText=data.data.sender
             li.appendChild(elm_name)
-            elm_message = document.createElement("span")
+            var elm_message = document.createElement("span")
             elm_message.innerText=data.data.message
             li.appendChild(elm_message)
 
             document.getElementById("message-list").appendChild(li)
         }
     } catch (error) {
-        alert("Message from server "+ event.data);
+        alert("thing go bad");
     }
+}
 
-});
+}
+
+
+const socket = new WebSocketCustom("ws://localhost:5000/chat/ws");
+
 
 //document.getElementById('send_media_form').onclick = function() { sendWebSocket(); };
 function sendWebSocket()
 {
-    socket.send(JSON.stringify({"event":"broadcast", "data": {
+    socket.sendEvent("broadcast", {
         "sender": document.getElementById('sender').value,
         "message": document.getElementById('message').value
-      }}));
+      });
 
     document.getElementById('message').value = "";
 }
