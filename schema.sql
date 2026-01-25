@@ -14,5 +14,6 @@ CREATE TABLE chat(
   key INTEGER PRIMARY KEY ASC,
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
   sender TEXT,
-  message TEXT
+  message TEXT,
+  channel TEXT
 );

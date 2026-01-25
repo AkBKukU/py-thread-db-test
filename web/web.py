@@ -12,6 +12,16 @@ def create_app(test_config=None):
     def hello():
         return "Hello, World!"
 
+    @app.route("/")
+    def index():
+        return """
+<H1>Examples:</H1>
+<ul>
+    <li><a href="hello">Hello World</a></li>
+    <li><a href="view/db">SQLite DB Hammering</a></li>
+    <li><a href="chat/">WebSocket Chat</a></li>
+</ul>"""
+
 
     from . import view
     from . import chat

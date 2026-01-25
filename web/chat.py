@@ -42,9 +42,10 @@ class CustomWebsocket(WebSocketHandler):
             "sender":data["data"]["sender"],
             "message":data["data"]["message"]
         })
-        else:
-            await db_message(data["data"])
-            await self.ws.send(json.dumps(data))
+        elif data["event"] == "sub":
+            print(f"Sub [{data["data"]["channel"]}] connected to [{self.uuid}]")
+            await wsc.websocket_unsubscribe_all(self.uuid)
+            await wsc.websocket_subscribe(data["data"]["channel"],self.uuid)
 
 @bp.websocket("/ws")
 @wsc.websocket_register(CustomWebsocket)
@@ -60,7 +61,7 @@ async def page():
         Renders a simple page from a template
         """
         db = DBDemo()
-        data = db.read("SELECT timestamp, sender, message FROM chat",[])
+        data = db.read("SELECT timestamp, sender, message, channel FROM chat",[])
 
         db.disconnect()
         return await render_template("chat/page.html", data=data)
@@ -69,15 +70,34 @@ async def db_message(data):
         db = DBDemo()
         db.modify("INSERT INTO chat(sender,message) VALUES (?,?)",[data["sender"],data["message"]])
 
+@bp.route("/api.json", methods=("GET", "POST"))
+async def api_json():
+
+    channel=request.args.get('channel').strip()
+    if channel is None:
+        channel = ""
+
+    db = DBDemo()
+    #pprint(channel)
+    if channel == "" or channel is None:
+
+        return db.to_dict(db.read("SELECT timestamp, sender, message, channel FROM chat",[]))
+    else:
+        return db.to_dict(db.read("SELECT timestamp, sender, message, channel FROM chat WHERE channel = ?",[channel]))
+
+
 @bp.route("/send", methods=("GET", "POST"))
 async def db():
-        """
-        Renders a simple page from a template
-        """
+    """
+    Renders a simple page from a template
+    """
 
-        data = await ( request.get_json() )
+    data = await ( request.get_json() )
+    data["channel"] = data["channel"].strip()
 
-        db = DBDemo()
+    db = DBDemo()
+    pprint(data["channel"])
+    if data["channel"] == "" or data["channel"] is None:
         db.modify("INSERT INTO chat(sender,message) VALUES (?,?)",[data["sender"],data["message"]])
 
         resp = db.read("SELECT timestamp, sender, message FROM chat",[])
@@ -85,8 +105,17 @@ async def db():
             "sender":data["sender"],
             "message":data["message"]
         })
+    else:
+        db.modify("INSERT INTO chat(sender,message,channel) VALUES (?,?,?)",[data["sender"],data["message"],data["channel"]])
 
-        db.disconnect()
+        resp = db.read("SELECT timestamp, sender, message, channel FROM chat WHERE channel = ?",[data["channel"]])
+        await wsc.call_sub(data["channel"],{
+            "sender":data["sender"],
+            "message":data["message"],
+            "channel":data["channel"]
+        })
 
-        return await render_template("chat/page.html", data=resp)
+    db.disconnect()
+
+    return await render_template("chat/page.html", data=resp)
 

@@ -9,7 +9,7 @@ class DBDemo:
 
                         # Initialize DB if empty
                         res = self.cur.execute("SELECT name FROM sqlite_master")
-                        if res.fetchall() is None:
+                        if res.fetchall() == []:
                                 print("Initializing database...")
                                 self.db_init(schema)
                         else:
@@ -27,6 +27,8 @@ class DBDemo:
                 self.db.commit()
                 self.db.close()
 
+        def to_dict(self,rows):
+                return [{k: row[k] for k in row.keys()} for row in rows]
 
         def db_init(self,schema = "schema.sql"):
 

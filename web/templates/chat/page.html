@@ -6,45 +6,62 @@
 {% endblock %}
 
 {% block header %}
-  <h1>{% block title %}View{% endblock %}</h1>
+  <h1>{% block title %}Chat{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
 <div>
+        <div>
+        <label for="channel">Channel: </label><input type="textbox" id="channel" /><input value="Load Channel" type="submit" id="load_channel" />
+        </div>
         <input type="textbox" id="sender" /><input type="textbox" id="message" /><input type="submit" id="send_media_form" />
         <ul id="message-list">
       {% for row in data %}
             <li>
               <span>{{ row['sender'] }}</span>
               <span>{{ row['message'] }}</span>
+              <span>{{ row['channel'] }}</span>
             </li>
       {% endfor %}
         </ul>
+        <div id="channel-list">
+        </div>
 </div>
 {% endblock %}
 
 {% block end %}
 <script>
 
+current_channel="";
+function addChat(data)
+{
+      var li = document.createElement("li")
+
+      var elm_name = document.createElement("span")
+      elm_name.innerText=data.data.sender
+      li.appendChild(elm_name)
+      var elm_message = document.createElement("span")
+      elm_message.innerText=data.data.message
+      li.appendChild(elm_message)
+      var elm_channel = document.createElement("span")
+      elm_channel.innerText=data.data.channel
+      li.appendChild(elm_channel)
+
+      document.getElementById("message-list").appendChild(li)
+}
 
 class WebSocketCustom extends WebSocketHandler
 {
 websocket_message(data)
 {
     try {
-        if( data.event && data.event == "broadcast")
+        if(data.event == "broadcast")
         {
-
-            var li = document.createElement("li")
-
-            var elm_name = document.createElement("span")
-            elm_name.innerText=data.data.sender
-            li.appendChild(elm_name)
-            var elm_message = document.createElement("span")
-            elm_message.innerText=data.data.message
-            li.appendChild(elm_message)
-
-            document.getElementById("message-list").appendChild(li)
+            addChat(data);
+        }
+        if(data.event == "sub")
+        {
+            addChat(data);
         }
     } catch (error) {
         alert("thing go bad");
@@ -54,39 +71,54 @@ websocket_message(data)
 }
 
 
+
+
 const socket = new WebSocketCustom("ws://localhost:5000/chat/ws");
 
-
-//document.getElementById('send_media_form').onclick = function() { sendWebSocket(); };
-function sendWebSocket()
-{
-    socket.sendEvent("broadcast", {
-        "sender": document.getElementById('sender').value,
-        "message": document.getElementById('message').value
-      });
-
-    document.getElementById('message').value = "";
-}
 
 document.getElementById('send_media_form').onclick = function() { sendMediaForm(); };
 function sendMediaForm()
 {
-        sender = new JSONHandler("./send")
+    // Send new message via POST form
+    var data = {
+      "sender": document.getElementById('sender').value,
+      "message": document.getElementById('message').value,
+      "channel": current_channel
+    }
 
-        data = {
-          "sender": document.getElementById('sender').value,
-          "message": document.getElementById('message').value
-        }
+    JSONHandler.post("./send",data).then(function(response){
+      if (!response.ok) {
+          throw new Error(`Response bad`);
+      }else{
+          document.getElementById('message').value = "";
+      }
+    });
 
-        sender.post(data).then(function(response){
+}
 
-          if (!response.ok) {
-              throw new Error(`Response bad`);
-          }else{
-              document.getElementById('message').value = "";
-          }
-        });
+document.getElementById('load_channel').onclick = function() { channelLoad(); };
 
+function channelLoad()
+{
+
+    current_channel=document.getElementById('channel').value;
+
+    //  Load channel data from JSON api endpoint
+    var li = document.createElement("li")
+    li.classList.add("theclass");
+
+    JSONHandler.read("./api.json?channel="+document.getElementById('channel').value)
+    .then(function(data){
+      document.getElementById('message-list').innerHTML = ListBuilder.ld_render(
+        '<span style="color:red;">%sender%</span> <span>%message%</span> <span>%channel%</span>',
+        data, document.createElement("ul"),li).innerHTML
+
+    });
+
+    // Subscribe to WebSocket event callback
+    socket.sendEvent("sub", {
+        "channel": current_channel
+      });
 }
 
 

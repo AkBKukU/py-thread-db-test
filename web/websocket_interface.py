@@ -35,6 +35,7 @@ class WebSocketHandler(object):
 
         self.ws = ws
         self.uuid = uuid.uuid1()
+        self.subs = []
 
     async def updateClient(self):
         """
@@ -56,6 +57,25 @@ class WebSocketHandler(object):
             {
                 "uuid":self.uuid.hex,
                 "event":event,
+                "data":data
+                }
+                ,default=str
+            ))
+
+
+    async def sendSub(self, sub, data):
+        """
+        Sends a dictionary as a packaged event to websocket client
+
+        :param event: event name as string
+        :param data: dict of data to send as payload
+        :return: returns nothing
+        """
+        await self.ws.send(json.dumps(
+            {
+                "uuid":self.uuid.hex,
+                "event":"sub",
+                "sub": sub,
                 "data":data
                 }
                 ,default=str
@@ -99,6 +119,7 @@ class WebSocketClients(object):
         """
 
         self.websocket_clients = {}
+        self.websocket_subscriptions = {}
         self.websocket_alive = True
 
 
@@ -112,6 +133,7 @@ class WebSocketClients(object):
         """
         print('You pressed Ctrl+C!:Websocket')
         self.websocket_alive = False
+
 
     async def websocket_connect(self,wsh):
         """
@@ -143,6 +165,7 @@ class WebSocketClients(object):
             print("Oh noes!")
             raise
 
+
     async def websocket_broadcast(self,data):
         """
         Send data payload to all connected clients
@@ -152,6 +175,62 @@ class WebSocketClients(object):
         """
         for key, client in self.websocket_clients.items():
             await client.sendEvent("broadcast",data)
+
+
+    async def websocket_subscribe(self,sub,uuid):
+        """
+        Subscribe a UUID to receive data when a subscription is called
+
+        :param sub: id of subscription
+        :param uuid: uuid for websocket connection
+        :return: returns nothing
+        """
+        if sub not in self.websocket_subscriptions:
+            self.websocket_subscriptions[sub]=[]
+
+        self.websocket_subscriptions[sub].append(uuid)
+
+
+    async def websocket_unsubscribe(self,sub,uuid):
+        """
+        Unsubscribe a UUID from subscription
+
+        :param sub: id of subscription
+        :param uuid: uuid for websocket connection
+        :return: returns nothing
+        """
+        if sub not in self.websocket_subscriptions:
+            return
+
+        self.websocket_subscriptions[sub].remove(uuid)
+
+
+    async def websocket_unsubscribe_all(self,uuid):
+        """
+        Unsubscribe a UUID from all subscriptions
+
+        :param uuid: uuid for websocket connection
+        :return: returns nothing
+        """
+        for sub in self.websocket_clients[uuid].subs:
+            self.websocket_unsubscribe(sub,uuid)
+
+
+    async def call_sub(self,sub,data):
+        """
+        Subscribe a UUID to receive data when a subscription is called
+
+        :param data: payload to send
+        :return: returns nothing
+        """
+        print(f"Calling [{sub}] with [{dir(data)}]")
+        if sub not in self.websocket_subscriptions:
+            print(f"[{sub}] Does not exist")
+            return False
+
+        for uuid in self.websocket_subscriptions[sub]:
+            await self.websocket_clients[uuid].sendSub(sub,data)
+
 
     def websocket_register(self, ws_class = WebSocketHandler):
         """
@@ -178,6 +257,9 @@ class WebSocketClients(object):
                     # Call main function
                     return await func(wsh)
                 finally:
+                    # Remove websocket client from all subs
+                    await self.websocket_unsubscribe_all(wsh.uuid)
+
                     # Remove websocket client on disconnection
                     del self.websocket_clients[wsh.uuid]
                     print("Client removed")
