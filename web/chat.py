@@ -20,7 +20,7 @@ from util.db import DBDemo
 # For copying function metadata through decorators
 from functools import wraps
 
-bp = Blueprint("chat", __name__, url_prefix="/chat")
+bp = Blueprint("chat", __name__, url_prefix="/chat", static_folder='static', static_url_path='/static')
 
 #####   ------------- User defnined line --------------
 
