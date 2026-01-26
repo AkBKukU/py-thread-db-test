@@ -1,28 +1,12 @@
 #!/usr/bin/env python3
 import sys
 from time import sleep
-from multiprocessing import Process
+import asyncio
 
-from web import web
+from web.web import WebServer
 from util.db import DBDemo
 
 import sqlite3
-
-def process_web():
-        app = web.create_app()
-        """ Run Flask in a process thread that is non-blocking """
-        print("Starting Flask")
-        return Process(
-                target=app.run,
-                kwargs={
-                "host":"0.0.0.0",
-                "port":"5000",
-                "debug":False,
-                "use_reloader":False
-                }
-        )
-
-
 
 
 if __name__ == '__main__':
@@ -30,7 +14,14 @@ if __name__ == '__main__':
         db = DBDemo()
         db.disconnect()
 
-        web_thread = process_web()
-        web_thread.start()
-        while web_thread.is_alive():
-                sleep(1)
+        web_server = WebServer()
+
+        if False:
+                web_thread=web_server.create_process()
+                web_thread.start()
+                while web_thread.is_alive():
+                        sleep(1)
+        else:
+
+                web_task=web_server.create_task()
+                asyncio.run(web_task)
