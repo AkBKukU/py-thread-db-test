@@ -3,7 +3,7 @@ import sys
 from time import sleep
 import asyncio
 
-from web.web import WebServer
+from web.web import app_task,app_process
 from util.db import DBDemo
 
 import sqlite3
@@ -14,14 +14,12 @@ if __name__ == '__main__':
         db = DBDemo()
         db.disconnect()
 
-        web_server = WebServer()
-
         if False:
-                web_thread=web_server.create_process()
+                web_thread=app_process()
                 web_thread.start()
                 while web_thread.is_alive():
                         sleep(1)
         else:
 
-                web_task=web_server.create_task()
+                web_task=app_task()
                 asyncio.run(web_task)
