@@ -1,0 +1,12 @@
+{"cameras": [
+  {
+    "uvc_id": 0,
+    "options":{
+        "photo":[5104, 3828],
+        "crop":[1500,1500],
+        "settle_frames":3
+    },
+    "uvc_options":{"sharpness":0}
+  }
+]
+}

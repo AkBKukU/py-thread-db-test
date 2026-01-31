@@ -6,14 +6,8 @@ class DBDemo:
 
                 if auto_connect:
                         self.connect(db_file)
-
-                        # Initialize DB if empty
-                        res = self.cur.execute("SELECT name FROM sqlite_master")
-                        if res.fetchall() == []:
-                                print("Initializing database...")
-                                self.db_init(schema)
-                        else:
-                                print(f"Reloading [{db_file}]...")
+                        print("Initializing database...")
+                        self.db_init(schema)
 
         def connect(self,db_file="db.db"):
 

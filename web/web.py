@@ -5,32 +5,38 @@ import asyncio
 from quart import Quart
 
 """Create and configure an instance of the Quart application."""
-app = Quart(__name__, instance_relative_config=True)
+def build_app(config_data=None):
 
-from . import view
-app.register_blueprint(view.bp)
-from . import chat
-app.register_blueprint(chat.bp)
-
-
-@app.route("/hello")
-def hello():
-    return "Hello, World!"
-
-@app.route("/")
-def index():
-    return """
-<H1>Examples:</H1>
-<ul>
-<li><a href="hello">Hello World</a></li>
-<li><a href="view/db">SQLite DB Hammering</a></li>
-<li><a href="chat/">WebSocket Chat</a></li>
-</ul>"""
+    app = Quart(__name__, instance_relative_config=True)
+    app.config['config']=config_data
+    from . import view
+    app.register_blueprint(view.bp)
+    from . import chat
+    app.register_blueprint(chat.bp)
+    from . import photo
+    app.register_blueprint(photo.dynamicRoutes(app,photo.bp))
 
 
+    @app.route("/hello")
+    def hello():
+        return "Hello, World!"
 
-def app_process(host="0.0.0.0",port=5000,debug=False,use_reloader=False):
+    @app.route("/")
+    def index():
+        return """
+    <H1>Examples:</H1>
+    <ul>
+    <li><a href="hello">Hello World</a></li>
+    <li><a href="view/db">SQLite DB Hammering</a></li>
+    <li><a href="chat/">WebSocket Chat</a></li>
+    <li><a href="photo/">Photo DB action example</a></li>
+    </ul>"""
 
+    return app
+
+
+def app_process(host="0.0.0.0",port=5000,debug=False,use_reloader=False,config_data=None):
+    app = build_app(config_data)
     return Process(
             target=app.run,
             kwargs={
@@ -42,8 +48,8 @@ def app_process(host="0.0.0.0",port=5000,debug=False,use_reloader=False):
     )
 
 
-def app_task(host="0.0.0.0",port=5000,debug=False,use_reloader=False):
-
+def app_task(host="0.0.0.0",port=5000,debug=False,use_reloader=False,config_data=None):
+    app = build_app(config_data)
     return app.run_task(
             host=host,
             port=port,
